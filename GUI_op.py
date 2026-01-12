@@ -15,33 +15,61 @@ DEFAULT_2D = "np.sin(5*x) + np.sin(5*y) + 0.1*(x**2 + y**2)"
 def run_de(func_input, is_2D, bounds, max_iter=50, x0=None):
     history = []
    
+    popsize = 15
     if is_2D:
         xL, xU, yL, yU = bounds
         bounds_list = [(xL, xU), (yL, yU)]
+        low = np.array([xL, yL])
+        high = np.array([xU, yU])
+        ndim = 2
        
         def func(p):
             return safe_eval(func_input, x=p[0], y=p[1])
        
         def callback(xk, convergence=1):
-            val = safe_eval(func_input, x=xk[0], y=xk[1])
+            val = func(xk)
             history.append((xk[0], xk[1], val))
     else:
         xL, xU = bounds
         bounds_list = [(xL, xU)]
+        low = np.array([xL])
+        high = np.array([xU])
+        ndim = 1
        
         def func(p):
             return safe_eval(func_input, x=p[0])
        
         def callback(xk, convergence=1):
-            val = safe_eval(func_input, x=xk[0])
+            val = func(xk)
             history.append((xk[0], val))
    
+    # Generate initial population
+    init_pop = np.random.uniform(low, high, (popsize, ndim))
+    if x0 is not None:
+        x0_arr = np.atleast_1d(x0)
+        if len(x0_arr) == ndim:
+            init_pop[0] = np.clip(x0_arr, low, high)
+   
+    # Evaluate initial population and add best to history
+    init_vals = np.array([func(ind) for ind in init_pop])
+    init_idx = np.argmin(init_vals)
+    init_best_pos = init_pop[init_idx]
+    init_best_val = init_vals[init_idx]
+    if is_2D:
+        history.append((init_best_pos[0], init_best_pos[1], init_best_val))
+    else:
+        history.append((init_best_pos[0], init_best_val))
+   
+    # Run DE
     res = differential_evolution(func, bounds_list, maxiter=max_iter, callback=callback,
-                                 popsize=15, tol=0.01, seed=42)
+                                 init=init_pop, popsize=popsize, tol=0.01, seed=42)
     best_pos = res.x
     best_val = res.fun
     nfev = res.nfev
-    best_history = [h[-1] for h in history]
+   
+    # Compute best_history as cumulative min
+    vals = [h[-1] for h in history]
+    best_history = [min(vals[:i+1]) for i in range(len(vals))]
     return history, best_history, best_pos, best_val, nfev
 # ---------------- SciPy Optimization -----------------
 def run_scipy(func_input, is_2D, bounds, method="BFGS", x0=None, max_iter=50):
@@ -172,7 +200,7 @@ if st.sidebar.button("🚀 Run Optimization"):
                 ys = [h[1] for h in history[:i+1]]
                 step = dict(
                     method="restyle",
-                    args=[{"x":[x_grid,xs], "y":[y_vals,ys]}],
+                    args=[{"x":[x_grid, xs], "y":[y_vals, ys]}],
                     label=str(i+1)
                 )
                 steps.append(step)
