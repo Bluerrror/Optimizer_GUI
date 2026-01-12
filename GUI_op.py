@@ -164,9 +164,9 @@ if st.sidebar.button("🚀 Run Optimization"):
             # Path traces empty initially
             path_trace2 = go.Scatter(x=[], y=[], mode="lines+markers",
                                      marker=dict(color="red",size=6), name="Path", showlegend=True)
+            fig.add_trace(path_trace2,1,1)
             path_trace3 = go.Scatter3d(x=[], y=[], z=[], mode="lines+markers",
                                        marker=dict(color="red",size=4), line=dict(color="red"), name="Path3D", showlegend=False)
-            fig.add_trace(path_trace2,1,1)
             fig.add_trace(path_trace3,1,2)
             frames = []
             if history:
@@ -179,7 +179,7 @@ if st.sidebar.button("🚀 Run Optimization"):
                                              marker=dict(color="red",size=6))
                     frame_data3 = go.Scatter3d(x=xs, y=ys, z=zs, mode="lines+markers",
                                                marker=dict(color="red",size=4), line=dict(color="red"))
-                    frame = go.Frame(data=[None, None, frame_data2, frame_data3], name=str(i+1))
+                    frame = go.Frame(data=[fig.data[0], fig.data[1], frame_data2, frame_data3], name=str(i+1))
                     frame_list.append(frame)
                 if frame_list:
                     first = frame_list[0]
@@ -244,7 +244,7 @@ if st.sidebar.button("🚀 Run Optimization"):
                     ys = [h[1] for h in history[:i+1]]
                     frame_data = go.Scatter(x=xs, y=ys, mode="lines+markers",
                                             marker=dict(color="red",size=6))
-                    frame = go.Frame(data=[None, frame_data], name=str(i+1))
+                    frame = go.Frame(data=[fig.data[0], frame_data], name=str(i+1))
                     frame_list.append(frame)
                 if frame_list:
                     first = frame_list[0]
