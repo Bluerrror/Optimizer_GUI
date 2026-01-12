@@ -161,70 +161,27 @@ if st.sidebar.button("🚀 Run Optimization"):
             fig.add_trace(go.Contour(z=Z,x=x_grid,y=y_grid,colorscale="Viridis",
                                      contours=dict(showlabels=True),showscale=False),1,1)
             fig.add_trace(go.Surface(z=Z,x=X,y=Y,colorscale="Viridis",showscale=False,opacity=0.8),1,2)
-            # Path traces empty initially
-            path_trace2 = go.Scatter(x=[], y=[], mode="lines+markers",
-                                     marker=dict(color="red",size=6), name="Path", showlegend=True)
-            fig.add_trace(path_trace2,1,1)
-            path_trace3 = go.Scatter3d(x=[], y=[], z=[], mode="lines+markers",
-                                       marker=dict(color="red",size=4), line=dict(color="red"), name="Path3D", showlegend=False)
-            fig.add_trace(path_trace3,1,2)
-            frames = []
+            # Paths
             if history:
-                frame_list = []
-                for i in range(len(history)):
-                    xs = [h[0] for h in history[:i+1]]
-                    ys = [h[1] for h in history[:i+1]]
-                    zs = [h[2] for h in history[:i+1]]
-                    frame_data2 = go.Scatter(x=xs, y=ys, mode="lines+markers",
-                                             marker=dict(color="red",size=6))
-                    frame_data3 = go.Scatter3d(x=xs, y=ys, z=zs, mode="lines+markers",
-                                               marker=dict(color="red",size=4), line=dict(color="red"))
-                    frame = go.Frame(data=[fig.data[0], fig.data[1], frame_data2, frame_data3], name=str(i+1))
-                    frame_list.append(frame)
-                if frame_list:
-                    first = frame_list[0]
-                    fig.data[2].x = first.data[2].x
-                    fig.data[2].y = first.data[2].y
-                    fig.data[3].x = first.data[3].x
-                    fig.data[3].y = first.data[3].y
-                    fig.data[3].z = first.data[3].z
-                    frames = frame_list[1:]
+                fig.add_trace(go.Scatter(x=[history[0][0]], y=[history[0][1]], mode="lines+markers",
+                                         marker=dict(color="red",size=6), name="Path"),1,1)
+                fig.add_trace(go.Scatter3d(x=[history[0][0]], y=[history[0][1]], z=[history[0][2]], mode="lines+markers",
+                                           marker=dict(color="red",size=4), line=dict(color="red"), name="Path3D"),1,2)
            
-            # Sliders
-            steps = [dict(method="animate",
-                          args=[[None], {"frame": {"duration": 0, "redraw": False}, "mode": "immediate"}],
-                          label="1")]
-            for k in range(len(frames)):
-                step = dict(method="animate",
-                            args=[[k], {"frame": {"duration": 300, "redraw": True}, "mode": "immediate",
-                                        "transition": {"duration": 0}}],
-                            label=str(k + 2))
+            # Slider steps (update only path traces 2 & 3)
+            steps=[]
+            for i in range(len(history)):
+                xs = [h[0] for h in history[:i+1]]
+                ys = [h[1] for h in history[:i+1]]
+                zs = [h[2] for h in history[:i+1]]
+                step = dict(
+                    method="restyle",
+                    args=[{"x":[xs,xs], "y":[ys,ys], "z":[None,zs]}, [2,3]],
+                    label=str(i+1)
+                )
                 steps.append(step)
-            sliders = [dict(active=0, currentvalue={"prefix": "Iteration: "}, steps=steps)]
-           
-            # Updatemenus
-            updatemenus = []
-            if len(steps) > 1:
-                updatemenus = [dict(type="buttons",
-                                    buttons=[dict(label="Play",
-                                                  method="animate",
-                                                  args=[None, dict(frame=dict(duration=500, redraw=True),
-                                                                   transition=dict(duration=300),
-                                                                   fromcurrent=True, mode="immediate")]),
-                                             dict(label="Pause",
-                                                  method="animate",
-                                                  args=[[None], dict(frame=dict(duration=0, redraw=False),
-                                                                     mode="immediate")])],
-                                    direction="left",
-                                    pad=dict(r=10, b=10),
-                                    showactive=False,
-                                    x=0.01,
-                                    xanchor="left",
-                                    y=0.01,
-                                    yanchor="bottom")]
-           
-            fig.update_layout(sliders=sliders, updatemenus=updatemenus,
-                              title="Optimization Progress", height=600)
+            sliders=[dict(active=0, currentvalue={"prefix":"Iteration: "}, steps=steps)]
+            fig.update_layout(sliders=sliders, title="Optimization Progress", height=600)
             st.plotly_chart(fig,use_container_width=True)
        
         else:
@@ -232,61 +189,23 @@ if st.sidebar.button("🚀 Run Optimization"):
             y_vals = [safe_eval(func_input,x) for x in x_grid]
             fig = go.Figure()
             fig.add_trace(go.Scatter(x=x_grid, y=y_vals, mode="lines", name="Function"))
-            # Path trace empty
-            path_trace = go.Scatter(x=[], y=[], mode="lines+markers",
-                                    marker=dict(color="red",size=6), name="Path")
-            fig.add_trace(path_trace)
-            frames = []
             if history:
-                frame_list = []
-                for i in range(len(history)):
-                    xs = [h[0] for h in history[:i+1]]
-                    ys = [h[1] for h in history[:i+1]]
-                    frame_data = go.Scatter(x=xs, y=ys, mode="lines+markers",
-                                            marker=dict(color="red",size=6))
-                    frame = go.Frame(data=[fig.data[0], frame_data], name=str(i+1))
-                    frame_list.append(frame)
-                if frame_list:
-                    first = frame_list[0]
-                    fig.data[1].x = first.data[1].x
-                    fig.data[1].y = first.data[1].y
-                    frames = frame_list[1:]
+                fig.add_trace(go.Scatter(x=[history[0][0]], y=[history[0][1]], mode="lines+markers",
+                                         marker=dict(color="red",size=6), name="Path"))
            
-            # Sliders
-            steps = [dict(method="animate",
-                          args=[[None], {"frame": {"duration": 0, "redraw": False}, "mode": "immediate"}],
-                          label="1")]
-            for k in range(len(frames)):
-                step = dict(method="animate",
-                            args=[[k], {"frame": {"duration": 300, "redraw": True}, "mode": "immediate",
-                                        "transition": {"duration": 0}}],
-                            label=str(k + 2))
+            # Slider steps
+            steps=[]
+            for i in range(len(history)):
+                xs = [h[0] for h in history[:i+1]]
+                ys = [h[1] for h in history[:i+1]]
+                step = dict(
+                    method="restyle",
+                    args=[{"x":[x_grid, xs], "y":[y_vals, ys]}],
+                    label=str(i+1)
+                )
                 steps.append(step)
-            sliders = [dict(active=0, currentvalue={"prefix": "Iteration: "}, steps=steps)]
-           
-            # Updatemenus
-            updatemenus = []
-            if len(steps) > 1:
-                updatemenus = [dict(type="buttons",
-                                    buttons=[dict(label="Play",
-                                                  method="animate",
-                                                  args=[None, dict(frame=dict(duration=500, redraw=True),
-                                                                   transition=dict(duration=300),
-                                                                   fromcurrent=True, mode="immediate")]),
-                                             dict(label="Pause",
-                                                  method="animate",
-                                                  args=[[None], dict(frame=dict(duration=0, redraw=False),
-                                                                     mode="immediate")])],
-                                    direction="left",
-                                    pad=dict(r=10, b=10),
-                                    showactive=False,
-                                    x=0.1,
-                                    xanchor="left",
-                                    y=0,
-                                    yanchor="bottom")]
-           
-            fig.update_layout(sliders=sliders, updatemenus=updatemenus,
-                              title="Optimization Progress", height=500)
+            sliders=[dict(active=0, currentvalue={"prefix":"Iteration: "}, steps=steps)]
+            fig.update_layout(sliders=sliders, title="Optimization Progress", height=500)
             st.plotly_chart(fig,use_container_width=True)
        
         # Convergence curve
